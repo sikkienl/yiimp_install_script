@@ -4,7 +4,7 @@
 # Modified by : Delari (https://github.com/xavatar/yiimp_install_scrypt)
 
 # Program:
-#   Install yiimp on Ubuntu 16.04/18.04 running Nginx, MariaDB, and php7.3
+#   Install yiimp on Ubuntu 22.04 running Nginx, MariaDB, and php7.3
 #   v0.3 (update May, 2022)
 #
 ################################################################################
@@ -44,8 +44,8 @@
     clear
     echo
     echo -e "$GREEN************************************************************************$COL_RESET"
-    echo -e "$GREEN Yiimp Install Script v0.3 $COL_RESET"
-    echo -e "$GREEN Install yiimp on Ubuntu 16.04/18.04 running Nginx, MariaDB, and php7.3 $COL_RESET"
+    echo -e "$GREEN Yiimp Install Script v0.5 $COL_RESET"
+    echo -e "$GREEN Install yiimp on Ubuntu 22.04 running Nginx, Mysql, and php8.1 $COL_RESET"
     echo -e "$GREEN************************************************************************$COL_RESET"
     echo
     sleep 3
@@ -139,30 +139,38 @@
     ' | sudo -E tee /etc/nginx/blockuseragents.rules >/dev/null 2>&1
 
 
-    # Installing Mariadb
+    # Installing MySQL
     echo
     echo
-    echo -e "$CYAN => Installing Mariadb Server : $COL_RESET"
+    echo -e "$CYAN => Installing MySQL Server : $COL_RESET"
     echo
     sleep 3
 
-    # Create random password
+    # Set the root password
     rootpasswd=$(openssl rand -base64 12)
-    export DEBIAN_FRONTEND="noninteractive"
-    sudo apt -y install mariadb-server
-    sudo systemctl enable mariadb.service
-    sudo systemctl start mariadb.service
+    export DEBIAN_FRONTEND=noninteractive
+    sudo debconf-set-selections <<< "mysql-server mysql-server/root_password password $rootpasswd"
+    sudo debconf-set-selections <<< "mysql-server mysql-server/root_password_again password $rootpasswd"
+
+    # Install MySQL Server
+    sudo apt-get update
+    sudo apt-get -y install mysql-server
+
+    # Start and enable MySQL service
+    sudo systemctl enable mysql.service
+    sudo systemctl start mysql.service
     sleep 5
-    sudo systemctl status mariadb | sed -n "1,3p"
+    sudo systemctl status mysql | sed -n "1,3p"
     sleep 15
     echo
     echo -e "$GREEN Done...$COL_RESET"
 
 
+
     # Installing Installing php7.3
     echo
     echo
-    echo -e "$CYAN => Installing php7.3 : $COL_RESET"
+    echo -e "$CYAN => Installing php8.1 : $COL_RESET"
     echo
     sleep 3
 
@@ -179,14 +187,33 @@
     #sudo phpenmod mcrypt
     #sudo phpenmod mbstring
     else
-    sudo apt -y install php7.3-fpm php7.3-opcache php7.3 php7.3-common php7.3-gd php7.3-mysql php7.3-imap php7.3-cli \
-    php7.3-cgi php-pear imagemagick libruby php7.3-curl php7.3-intl php7.3-pspell mcrypt\
-    php7.3-recode php7.3-sqlite3 php7.3-tidy php7.3-xmlrpc php7.3-xsl memcached php7.3-memcache php7.3-memcached php-imagick php-gettext php7.3-zip php7.3-mbstring \
-    libpsl-dev libnghttp2-dev
+    sudo apt update && sudo apt install -y \
+    php8.1-fpm \
+    php8.1-opcache \
+    php8.1-common \
+    php8.1-gd \
+    php8.1-mysql \
+    php8.1-imap \
+    php8.1-cli \
+    php8.1-curl \
+    php8.1-intl \
+    php8.1-sqlite3 \
+    php8.1-xml \
+    php8.1-zip \
+    php8.1-mbstring \
+    php-imagick \
+    imagemagick \
+    memcached \
+    php8.1-memcached \
+    php8.1-gettext \
+    libmagickwand-dev \
+    libpsl-dev \
+    libnghttp2-dev
+
     fi
     sleep 5
-    sudo systemctl start php7.3-fpm
-    sudo systemctl status php7.3-fpm | sed -n "1,3p"
+    sudo systemctl start php8.1-fpm
+    sudo systemctl status php8.1-fpm | sed -n "1,3p"
     sleep 15
     echo
     echo -e "$GREEN Done...$COL_RESET"
@@ -462,8 +489,8 @@
         if ($request_method !~ ^(GET|HEAD|POST)$) {
         return 444;
         }
-        listen 80;
-        listen [::]:80;
+        listen 3005;
+        listen [::]:3005;
         server_name '"${server_name}"';
         root "/var/www/'"${server_name}"'/html/web";
         index index.html index.htm index.php;
@@ -491,7 +518,7 @@
 
         location ~ ^/index\.php$ {
             fastcgi_split_path_info ^(.+\.php)(/.+)$;
-            fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
+            fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;
             fastcgi_index index.php;
             include fastcgi_params;
             fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
@@ -528,7 +555,7 @@
             deny all;
       }
         location ~ /phpmyadmin/(.+\.php)$ {
-            fastcgi_pass unix:/run/php/php7.3-fpm.sock;
+            fastcgi_pass unix:/run/php/php8.1-fpm.sock;
             fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
             include fastcgi_params;
             include snippets/fastcgi-php.conf;
@@ -540,7 +567,7 @@
     sudo ln -s /etc/nginx/sites-available/$server_name.conf /etc/nginx/sites-enabled/$server_name.conf
     sudo ln -s /var/web /var/www/$server_name/html
 	sudo ln -s /var/stratum/config /var/web/list-algos
-    sudo systemctl reload php7.3-fpm.service
+    sudo systemctl reload php8.1-fpm.service
     sudo systemctl restart nginx.service
     echo -e "$GREEN Done...$COL_RESET"
 
@@ -565,8 +592,8 @@
         if ($request_method !~ ^(GET|HEAD|POST)$) {
         return 444;
         }
-        listen 80;
-        listen [::]:80;
+        listen 3005;
+        listen [::]:3005;
         server_name '"${server_name}"';
         # enforce https
         return 301 https://$server_name$request_uri;
@@ -622,7 +649,7 @@
 
             location ~ ^/index\.php$ {
                 fastcgi_split_path_info ^(.+\.php)(/.+)$;
-                fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
+                fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;
                 fastcgi_index index.php;
                 include fastcgi_params;
                 fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
@@ -653,7 +680,7 @@
             deny all;
     }
         location ~ /phpmyadmin/(.+\.php)$ {
-            fastcgi_pass unix:/run/php/php7.3-fpm.sock;
+            fastcgi_pass unix:/run/php/php8.1-fpm.sock;
             fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
             include fastcgi_params;
             include snippets/fastcgi-php.conf;
@@ -664,7 +691,7 @@
     ' | sudo -E tee /etc/nginx/sites-available/$server_name.conf >/dev/null 2>&1
     fi
 
-    sudo systemctl reload php7.3-fpm.service
+    sudo systemctl reload php8.1-fpm.service
     sudo systemctl restart nginx.service
     echo -e "$GREEN Done...$COL_RESET"
 
@@ -678,8 +705,8 @@
         if ($request_method !~ ^(GET|HEAD|POST)$) {
         return 444;
         }
-        listen 80;
-        listen [::]:80;
+        listen 3005;
+        listen [::]:3005;
         server_name '"${server_name}"' www.'"${server_name}"';
         root "/var/www/'"${server_name}"'/html/web";
         index index.html index.htm index.php;
@@ -707,7 +734,7 @@
 
         location ~ ^/index\.php$ {
             fastcgi_split_path_info ^(.+\.php)(/.+)$;
-            fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
+            fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;
             fastcgi_index index.php;
             include fastcgi_params;
             fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
@@ -744,7 +771,7 @@
             deny all;
     }
         location ~ /phpmyadmin/(.+\.php)$ {
-            fastcgi_pass unix:/run/php/php7.3-fpm.sock;
+            fastcgi_pass unix:/run/php/php8.1-fpm.sock;
             fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
             include fastcgi_params;
             include snippets/fastcgi-php.conf;
@@ -756,7 +783,7 @@
     sudo ln -s /etc/nginx/sites-available/$server_name.conf /etc/nginx/sites-enabled/$server_name.conf
     sudo ln -s /var/web /var/www/$server_name/html
 	sudo ln -s /var/stratum/config /var/web/list-algos
-    sudo systemctl reload php7.3-fpm.service
+    sudo systemctl reload php8.1-fpm.service
     sudo systemctl restart nginx.service
     echo -e "$GREEN Done...$COL_RESET"
 
@@ -782,8 +809,8 @@
         if ($request_method !~ ^(GET|HEAD|POST)$) {
         return 444;
         }
-        listen 80;
-        listen [::]:80;
+        listen 3005;
+        listen [::]:3005;
         server_name '"${server_name}"';
         # enforce https
         return 301 https://$server_name$request_uri;
@@ -839,7 +866,7 @@
 
             location ~ ^/index\.php$ {
                 fastcgi_split_path_info ^(.+\.php)(/.+)$;
-                fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
+                fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;
                 fastcgi_index index.php;
                 include fastcgi_params;
                 fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
@@ -872,7 +899,7 @@
             deny all;
     }
         location ~ /phpmyadmin/(.+\.php)$ {
-            fastcgi_pass unix:/run/php/php7.3-fpm.sock;
+            fastcgi_pass unix:/run/php/php8.1-fpm.sock;
             fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
             include fastcgi_params;
             include snippets/fastcgi-php.conf;
@@ -885,7 +912,7 @@
     echo -e "$GREEN Done...$COL_RESET"
 
     fi
-    sudo systemctl reload php7.3-fpm.service
+    sudo systemctl reload php8.1-fpm.service
     sudo systemctl restart nginx.service
     fi
 
@@ -902,19 +929,18 @@
     Q2="GRANT ALL ON *.* TO 'panel'@'localhost' IDENTIFIED BY '$password';"
     Q3="FLUSH PRIVILEGES;"
     SQL="${Q1}${Q2}${Q3}"
-    sudo mysql -u root -p="" -e "$SQL"
+    sudo mysql -u root -p"$rootpasswd" -e "$SQL"
 
     # Create stratum user
     Q1="GRANT ALL ON *.* TO 'stratum'@'localhost' IDENTIFIED BY '$password2';"
     Q2="FLUSH PRIVILEGES;"
     SQL="${Q1}${Q2}"
-    sudo mysql -u root -p="" -e "$SQL"
+    sudo mysql -u root -p"$rootpasswd" -e "$SQL"
 
-    #Create my.cnf
-
+    # Create my.cnf
     echo '
     [clienthost1]
-    user=panel
+        user=panel
     password='"${password}"'
     database=yiimpfrontend
     host=localhost
@@ -930,7 +956,8 @@
     user=root
     password='"${rootpasswd}"'
     ' | sudo -E tee ~/.my.cnf >/dev/null 2>&1
-      sudo chmod 0600 ~/.my.cnf
+    sudo chmod 0600 ~/.my.cnf
+
 
 
     # Create keys file
@@ -960,7 +987,7 @@
     echo -e "$GREEN Done...$COL_RESET"
 
 
-    # Peforming the SQL import
+   # Performing the SQL import
     echo
     echo
     echo -e "$CYAN => Database 'yiimpfrontend' and users 'panel' and 'stratum' created with password $password and $password2, will be saved for you $COL_RESET"
@@ -972,33 +999,37 @@
     cd ~
     cd yiimp/sql
 
-    # Import sql dump
-    sudo zcat 2020-11-10-yaamp.sql.gz | sudo mysql --defaults-group-suffix=host1
+    # Select the database before importing
+    DB_NAME="yiimpfrontend"
 
-    # Oh the humanity!
-    sudo mysql --defaults-group-suffix=host1 --force < 2016-04-24-market_history.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2016-04-27-settings.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2016-05-11-coins.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2016-05-15-benchmarks.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2016-05-23-bookmarks.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2016-06-01-notifications.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2016-06-04-bench_chips.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2016-11-23-coins.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2017-02-05-benchmarks.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2017-03-31-earnings_index.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2020-06-03-blocks.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2017-05-accounts_case_swaptime.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2017-06-payouts_coinid_memo.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2017-09-notifications.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2017-10-bookmarks.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2018-09-22-workers.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2017-11-segwit.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2018-01-stratums_ports.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2018-02-coins_getinfo.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2019-03-coins_thepool_life.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2022-10-14-shares_solo.sql
-    sudo mysql --defaults-group-suffix=host1 --force < 2022-10-29-blocks_effort.sql
-    echo -e "$GREEN Done...$COL_RESET"
+    # Ensure the database exists
+    sudo mysql --defaults-group-suffix=host1 -e "CREATE DATABASE IF NOT EXISTS $DB_NAME;"
+
+    # Set the target database
+    sudo mysql --defaults-group-suffix=host1 $DB_NAME <<EOF
+    USE $DB_NAME;
+    EOF
+
+    # Import the initial sql dump
+    sudo zcat 2024-03-06-complete_export.sql.gz | sudo mysql --defaults-group-suffix=host1 $DB_NAME
+
+    # Import other sql files in order
+    sudo mysql --defaults-group-suffix=host1 $DB_NAME --force < 2024-03-18-add_aurum_algo.sql
+    sudo mysql --defaults-group-suffix=host1 $DB_NAME --force < 2024-03-29-add_github_version.sql
+    sudo mysql --defaults-group-suffix=host1 $DB_NAME --force < 2024-03-31-add_payout_threshold.sql
+    sudo mysql --defaults-group-suffix=host1 $DB_NAME --force < 2024-04-01-add_auto_exchange.sql
+    sudo mysql --defaults-group-suffix=host1 $DB_NAME --force < 2024-04-01-shares_blocknumber.sql
+    sudo mysql --defaults-group-suffix=host1 $DB_NAME --force < 2024-04-05-algos_port_color.sql
+    sudo mysql --defaults-group-suffix=host1 $DB_NAME --force < 2024-04-22-add_equihash_algos.sql
+    sudo mysql --defaults-group-suffix=host1 $DB_NAME --force < 2024-04-23-add_pers_string.sql
+    sudo mysql --defaults-group-suffix=host1 $DB_NAME --force < 2024-04-29-add_sellthreshold.sql
+    sudo mysql --defaults-group-suffix=host1 $DB_NAME --force < 2024-05-04-add_neoscrypt_xaya_algo.sql
+    sudo mysql --defaults-group-suffix=host1 $DB_NAME --force < 2025-02-06-add_usemweb.sql
+    sudo mysql --defaults-group-suffix=host1 $DB_NAME --force < 2025-02-13-add_xelisv2-pepew.sql
+    sudo mysql --defaults-group-suffix=host1 $DB_NAME --force < 2025-02-23-add_algo_kawpow.sql
+
+    echo "SQL imports completed successfully!"
+
 
 
     # Generating a basic Yiimp serverconfig.php
@@ -1010,113 +1041,155 @@
 
     # Make config file
     echo '
-    <?php
-    ini_set('"'"'date.timezone'"'"', '"'"'CET'"'"');
-    define('"'"'YAAMP_LOGS'"'"', '"'"'/var/log/yiimp'"'"');
-    define('"'"'YAAMP_HTDOCS'"'"', '"'"'/var/web'"'"');
+<?php
 
-    define('"'"'YAAMP_BIN'"'"', '"'"'/var/bin'"'"');
+ini_set("date.timezone", "UTC");
 
-    define('"'"'YAAMP_DBHOST'"'"', '"'"'localhost'"'"');
-    define('"'"'YAAMP_DBNAME'"'"', '"'"'yiimpfrontend'"'"');
-    define('"'"'YAAMP_DBUSER'"'"', '"'"'panel'"'"');
-    define('"'"'YAAMP_DBPASSWORD'"'"', '"'"''"${password}"''"'"');
+define("YAAMP_LOGS", "/var/www/log");
+define("YAAMP_HTDOCS", "/var/www");
+define("YAAMP_BIN", "/var/www/bin");
 
-    define('"'"'YAAMP_PRODUCTION'"'"', true);
-    define('"'"'YAAMP_RENTAL'"'"', false);
+define("YAAMP_DBHOST", "localhost");
+define("YAAMP_DBNAME", "yaamp");
+define("YAAMP_DBUSER", "root");
+define("YAAMP_DBPASSWORD", "password");
 
-    define('"'"'YAAMP_LIMIT_ESTIMATE'"'"', false);
+define("YAAMP_SITE_URL", "yiimp.ccminer.org");
+define("YAAMP_STRATUM_URL", YAAMP_SITE_URL); // change if your stratum server is on a different host
+define("YAAMP_SITE_NAME", "YiiMP");
 
-    define('"'"'YAAMP_FEES_SOLO'"'"', 0.5);
+define("YAAMP_PRODUCTION", true);
 
-    define('"'"'YAAMP_FEES_MINING'"'"', 0.5);
-    define('"'"'YAAMP_FEES_EXCHANGE'"'"', 2);
-    define('"'"'YAAMP_FEES_RENTING'"'"', 2);
-    define('"'"'YAAMP_TXFEE_RENTING_WD'"'"', 0.002);
+define("YIIMP_PUBLIC_EXPLORER", true);
+define("YIIMP_PUBLIC_BENCHMARK", false);
 
-    define('"'"'YAAMP_PAYMENTS_FREQ'"'"', 2*60*60);
-    define('"'"'YAAMP_PAYMENTS_MINI'"'"', 0.001);
+define("YAAMP_RENTAL", true);
+define("YAAMP_LIMIT_ESTIMATE", false);
 
-    define('"'"'YAAMP_ALLOW_EXCHANGE'"'"', false);
-    define('"'"'YIIMP_PUBLIC_EXPLORER'"'"', true);
-    define('"'"'YIIMP_PUBLIC_BENCHMARK'"'"', false);
+define("YAAMP_FEES_SOLO", 1);
+define("YAAMP_FEES_MINING", 0.5);
+define("YAAMP_FEES_EXCHANGE", 2);
+define("YAAMP_FEES_RENTING", 2);
+define("YAAMP_TXFEE_RENTING_WD", 0.002);
+define("YAAMP_PAYMENTS_FREQ", 3 * 60 * 60);
+define("YAAMP_PAYMENTS_MINI", 0.001);
 
-    define('"'"'YIIMP_FIAT_ALTERNATIVE'"'"', '"'"'USD'"'"'); // USD is main
-    define('"'"'YAAMP_USE_NICEHASH_API'"'"', false);
+define("YAAMP_ALLOW_EXCHANGE", false);
+define("YIIMP_FIAT_ALTERNATIVE", "EUR"); // USD is main
 
-    define('"'"'YAAMP_BTCADDRESS'"'"', '"'"'1C1hnjk3WhuAvUN6Ny6LTxPD3rwSZwapW7'"'"');
+define("YAAMP_USE_NICEHASH_API", false);
 
-    define('"'"'YAAMP_SITE_URL'"'"', '"'"''"${server_name}"''"'"');
-    define('"'"'YAAMP_STRATUM_URL'"'"', YAAMP_SITE_URL); // change if your stratum server is on a different host
-    define('"'"'YAAMP_SITE_NAME'"'"', '"'"'YIIMP'"'"');
-    define('"'"'YAAMP_ADMIN_EMAIL'"'"', '"'"''"${EMAIL}"''"'"');
-    define('"'"'YAAMP_ADMIN_IP'"'"', '"'"''"${Public}"''"'"'); // samples: "80.236.118.26,90.234.221.11" or "10.0.0.1/8"
+define("YAAMP_BTCADDRESS", "1Auhps1mHZQpoX4mCcVL8odU81VakZQ6dR");
 
-    define('"'"'YAAMP_ADMIN_WEBCONSOLE'"'"', true);
-    define('"'"'YAAMP_CREATE_NEW_COINS'"'"', false);
-    define('"'"'YAAMP_NOTIFY_NEW_COINS'"'"', false);
+define("YIIMP_ADMIN_LOGIN", false);
+define("YAAMP_ADMIN_EMAIL", "yiimp@spam.la");
+define("YAAMP_ADMIN_USER", "yiimpadmin");
+define("YAAMP_ADMIN_PASS", "set-a-password");
+define("YAAMP_ADMIN_IP", ""); // samples: "80.236.118.26,90.234.221.11" or "10.0.0.1/8"
+define("YAAMP_ADMIN_WEBCONSOLE", true);
+define("YAAMP_CREATE_NEW_COINS", true);
+define("YAAMP_NOTIFY_NEW_COINS", false);
+define("YAAMP_DEFAULT_ALGO", "x11");
 
-    define('"'"'YAAMP_DEFAULT_ALGO'"'"', '"'"'all'"'"');
+/* Github access token used to scan coin repos for new releases */
+define("GITHUB_ACCESSTOKEN", "<username>:<api-secret>");
 
-    define('"'"'YAAMP_USE_NGINX'"'"', true);
+/* mail server access data to send mails using external mailserver */
+define("SMTP_HOST", "mail.example.com");
+define("SMTP_PORT", 25);
+define("SMTP_USEAUTH", true);
+define("SMTP_USERNAME", "mailuser");
+define("SMTP_PASSWORD", "mailpassword");
+define("SMTP_DEFAULT_FROM", "mailuser@example.com");
+define("SMTP_DEFAULT_HELO", "mypool-server.example.com");
 
-    // Exchange public keys (private keys are in a separate config file)
-    define('"'"'EXCH_CRYPTOPIA_KEY'"'"', '"'"''"'"');
-    define('"'"'EXCH_POLONIEX_KEY'"'"', '"'"''"'"');
-    define('"'"'EXCH_BITTREX_KEY'"'"', '"'"''"'"');
-    define('"'"'EXCH_BLEUTRADE_KEY'"'"', '"'"''"'"');
-    define('"'"'EXCH_BTER_KEY'"'"', '"'"''"'"');
-    define('"'"'EXCH_YOBIT_KEY'"'"', '"'"''"'"');
-    define('"'"'EXCH_CCEX_KEY'"'"', '"'"''"'"');
-    define('"'"'EXCH_COINMARKETS_USER'"'"', '"'"''"'"');
-    define('"'"'EXCH_COINMARKETS_PIN'"'"', '"'"''"'"');
-    define('"'"'EXCH_BITSTAMP_ID'"'"','"'"''"'"');
-    define('"'"'EXCH_BITSTAMP_KEY'"'"','"'"''"'"');
-    define('"'"'EXCH_HITBTC_KEY'"'"','"'"''"'"');
-    define('"'"'EXCH_KRAKEN_KEY'"'"', '"'"''"'"');
-    define('"'"'EXCH_LIVECOIN_KEY'"'"', '"'"''"'"');
-    define('"'"'EXCH_NOVA_KEY'"'"', '"'"''"'"');
+define("YAAMP_USE_NGINX", false);
 
-    // Automatic withdraw to Yaamp btc wallet if btc balance > 0.3
-    define('"'"'EXCH_AUTO_WITHDRAW'"'"', 0.3);
+/* Sample config file to put in /etc/yiimp/keys.php */
 
-    // nicehash keys deposit account & amount to deposit at a time
-    define('"'"'NICEHASH_API_KEY'"'"','"'"'f96c65a7-3d2f-4f3a-815c-cacf00674396'"'"');
-    define('"'"'NICEHASH_API_ID'"'"','"'"'825979'"'"');
-    define('"'"'NICEHASH_DEPOSIT'"'"','"'"'3ABoqBjeorjzbyHmGMppM62YLssUgJhtuf'"'"');
-    define('"'"'NICEHASH_DEPOSIT_AMOUNT'"'"','"'"'0.01'"'"');
+define("YIIMP_MYSQLDUMP_USER", "root");
+define("YIIMP_MYSQLDUMP_PASS", "<my_mysql_password>");
 
-    $cold_wallet_table = array(
-	'"'"'1PqjApUdjwU9k4v1RDWf6XveARyEXaiGUz'"'"' => 0.10,
-    );
+/* 
+ * Exchange access keys
+ * for public fronted use separate container instance and leave keys unconfigured
+ *
+ * access tokens required to create/cancel orders and access your balances/deposit addresses
+ */
+define("EXCH_BINANCE_KEY", "");
+define("EXCH_BINANCE_SECRET", "");
 
-    // Sample fixed pool fees
-    $configFixedPoolFees = array(
-        '"'"'zr5'"'"' => 2.0,
-        '"'"'scrypt'"'"' => 20.0,
-        '"'"'sha256'"'"' => 5.0,
-     );
+define("EXCH_CEXIO_SECRET", "");
 
-     // Sample fixed pool fees solo
-    $configFixedPoolFeesSolo = array(
-        '"'"'zr5'"'"' => 2.0,
-        '"'"'scrypt'"'"' => 20.0,
-        '"'"'sha256'"'"' => 5.0,
+define("EXCH_EXBITRON_KEY", "");
 
-    );
+define("EXCH_HITBTC_SECRET", "");
+define("EXCH_HITBTC_KEY", "");
 
-    // Sample custom stratum ports
-    $configCustomPorts = array(
-    //	'"'"'x11'"'"' => 7000,
-    );
+define("EXCH_KRAKEN_KEY", "");
+define("EXCH_KRAKEN_SECRET", "");
 
-    // mBTC Coefs per algo (default is 1.0)
-    $configAlgoNormCoef = array(
-    //	'"'"'x11'"'"' => 5.0,
-    );
-    ' | sudo -E tee /var/web/serverconfig.php >/dev/null 2>&1
+define("EXCH_KUCOIN_SECRET", "");
 
-    echo -e "$GREEN Done...$COL_RESET"
+define("EXCH_POLONIEX_KEY", "");
+define("EXCH_POLONIEX_SECRET", "");
+
+define("EXCH_SAFETRADE_KEY", "");
+define("EXCH_SAFETRADE_SECRET", "");
+
+define("EXCH_TRADEOGRE_KEY", "");
+define("EXCH_TRADEOGRE_SECRET", "");
+
+define("EXCH_YOBIT_KEY", "");
+define("EXCH_YOBIT_SECRET", "");
+
+define("EXCH_NONKYC_KEY", "");
+define("EXCH_NONKYC_SECRET", "");
+
+define("EXCH_XEGGEX_KEY", "");
+define("EXCH_XEGGEX_SECRET", "");
+
+// Automatic withdraw to Yaamp btc wallet if btc balance > 0.3
+define("EXCH_AUTO_WITHDRAW", 0.3);
+
+// nicehash keys deposit account & amount to deposit at a time
+define("NICEHASH_API_KEY", "521c254d-8cc7-4319-83d2-ac6c604b5b49");
+define("NICEHASH_API_ID", "9205");
+define("NICEHASH_DEPOSIT", "3J9tapPoFCtouAZH7Th8HAPsD8aoykEHzk");
+define("NICEHASH_DEPOSIT_AMOUNT", "0.01");
+
+
+$cold_wallet_table = array(
+    "1C23KmLeCaQSLLyKVykHEUse1R7jRDv9j9" => 0.10,
+);
+
+// Sample fixed pool fees
+$configFixedPoolFees = array(
+    "zr5" => 2.0,
+    "scrypt" => 20.0,
+    "sha256" => 5.0,
+);
+
+// Sample fixed pool fees solo
+$configFixedPoolFeesSolo = array(
+    "zr5" => 2.0,
+    "scrypt" => 2.0,
+    "sha256" => 5.0,
+);
+
+// Sample custom stratum ports
+$configCustomPorts = array(
+//    "x11" => 7000,
+);
+
+// mBTC Coefs per algo (default is 1.0)
+$configAlgoNormCoef = array(
+//    "x11" => 5.0,
+);
+' | sudo -E tee /var/www/serverconfig.php >/dev/null 2>&1
+
+echo -e "$GREEN Done...$COL_RESET"
+
 
 
     # Updating stratum config files with database connection info
@@ -1191,8 +1264,8 @@
     sudo systemctl status mysql | sed -n "1,3p"
     sudo systemctl restart nginx.service
     sudo systemctl status nginx | sed -n "1,3p"
-    sudo systemctl restart php7.3-fpm.service
-    sudo systemctl status php7.3-fpm | sed -n "1,3p"
+    sudo systemctl restart php8.1-fpm.service
+    sudo systemctl status php8.1-fpm | sed -n "1,3p"
 
 
     echo
@@ -1203,7 +1276,7 @@
     echo
     echo
     echo -e "$GREEN***************************$COL_RESET"
-    echo -e "$GREEN Yiimp Install Script v0.2 $COL_RESET"
+    echo -e "$GREEN Yiimp Install Script v0.5 $COL_RESET"
     echo -e "$GREEN Finish !!! $COL_RESET"
     echo -e "$GREEN***************************$COL_RESET"
     echo
@@ -1228,7 +1301,7 @@
     echo -e "$RED YOU MUST REBOOT NOW  TO FINALIZE INSTALLATION !!! $COL_RESET"
     echo -e "$RED***************************************************$COL_RESET"
     echo -e "$RED if u have white page blank on site check          $COL_RESET"
-    echo -e "$RED php7.3-memcache | php7.3-memcached | php7.3-fpm   $COL_RESET"
+    echo -e "$RED php8.1-memcache | php8.1-memcached | php8.1-fpm   $COL_RESET"
     echo -e "$RED try just restart them first...                    $COL_RESET"
     echo -e "$RED***************************************************$COL_RESET"
     echo
