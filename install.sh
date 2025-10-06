@@ -45,7 +45,7 @@
     echo
     echo -e "$GREEN************************************************************************$COL_RESET"
     echo -e "$GREEN Yiimp Install Script v0.5 $COL_RESET"
-    echo -e "$GREEN Install yiimp on Ubuntu 22.04 running Nginx, Mysql, and php8.1 $COL_RESET"
+    echo -e "$GREEN Install yiimp on Ubuntu 22.04 running Nginx, Mysql, and php8.2 $COL_RESET"
     echo -e "$GREEN************************************************************************$COL_RESET"
     echo
     sleep 3
@@ -170,7 +170,7 @@
     # Installing Installing php7.3
     echo
     echo
-    echo -e "$CYAN => Installing php8.1 : $COL_RESET"
+    echo -e "$CYAN => Installing php8.2 : $COL_RESET"
     echo
     sleep 3
 
@@ -188,32 +188,32 @@
     #sudo phpenmod mbstring
     else
     sudo apt update && sudo apt install -y \
-    php8.1-fpm \
-    php8.1-opcache \
-    php8.1-common \
-    php8.1-gd \
-    php8.1-mysql \
-    php8.1-imap \
-    php8.1-cli \
-    php8.1-curl \
-    php8.1-intl \
-    php8.1-sqlite3 \
-    php8.1-xml \
-    php8.1-zip \
-    php8.1-mbstring \
+    php8.2-fpm \
+    php8.2-opcache \
+    php8.2-common \
+    php8.2-gd \
+    php8.2-mysql \
+    php8.2-imap \
+    php8.2-cli \
+    php8.2-curl \
+    php8.2-intl \
+    php8.2-sqlite3 \
+    php8.2-xml \
+    php8.2-zip \
+    php8.2-mbstring \
     php-imagick \
     imagemagick \
     memcached \
-    php8.1-memcached \
-    php8.1-gettext \
+    php8.2-memcached \
+    php8.2-gettext \
     libmagickwand-dev \
     libpsl-dev \
     libnghttp2-dev
 
     fi
     sleep 5
-    sudo systemctl start php8.1-fpm
-    sudo systemctl status php8.1-fpm | sed -n "1,3p"
+    sudo systemctl start php8.2-fpm
+    sudo systemctl status php8.2-fpm | sed -n "1,3p"
     sleep 15
     echo
     echo -e "$GREEN Done...$COL_RESET"
@@ -518,7 +518,7 @@
 
         location ~ ^/index\.php$ {
             fastcgi_split_path_info ^(.+\.php)(/.+)$;
-            fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;
+            fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
             fastcgi_index index.php;
             include fastcgi_params;
             fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
@@ -555,7 +555,7 @@
             deny all;
       }
         location ~ /phpmyadmin/(.+\.php)$ {
-            fastcgi_pass unix:/run/php/php8.1-fpm.sock;
+            fastcgi_pass unix:/run/php/php8.2-fpm.sock;
             fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
             include fastcgi_params;
             include snippets/fastcgi-php.conf;
@@ -567,7 +567,7 @@
     sudo ln -s /etc/nginx/sites-available/$server_name.conf /etc/nginx/sites-enabled/$server_name.conf
     sudo ln -s /var/web /var/www/$server_name/html
 	sudo ln -s /var/stratum/config /var/web/list-algos
-    sudo systemctl reload php8.1-fpm.service
+    sudo systemctl reload php8.2-fpm.service
     sudo systemctl restart nginx.service
     echo -e "$GREEN Done...$COL_RESET"
 
@@ -649,7 +649,7 @@
 
             location ~ ^/index\.php$ {
                 fastcgi_split_path_info ^(.+\.php)(/.+)$;
-                fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;
+                fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
                 fastcgi_index index.php;
                 include fastcgi_params;
                 fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
@@ -680,7 +680,7 @@
             deny all;
     }
         location ~ /phpmyadmin/(.+\.php)$ {
-            fastcgi_pass unix:/run/php/php8.1-fpm.sock;
+            fastcgi_pass unix:/run/php/php8.2-fpm.sock;
             fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
             include fastcgi_params;
             include snippets/fastcgi-php.conf;
@@ -691,7 +691,7 @@
     ' | sudo -E tee /etc/nginx/sites-available/$server_name.conf >/dev/null 2>&1
     fi
 
-    sudo systemctl reload php8.1-fpm.service
+    sudo systemctl reload php8.2-fpm.service
     sudo systemctl restart nginx.service
     echo -e "$GREEN Done...$COL_RESET"
 
@@ -734,7 +734,7 @@
 
         location ~ ^/index\.php$ {
             fastcgi_split_path_info ^(.+\.php)(/.+)$;
-            fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;
+            fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
             fastcgi_index index.php;
             include fastcgi_params;
             fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
@@ -771,7 +771,7 @@
             deny all;
     }
         location ~ /phpmyadmin/(.+\.php)$ {
-            fastcgi_pass unix:/run/php/php8.1-fpm.sock;
+            fastcgi_pass unix:/run/php/php8.2-fpm.sock;
             fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
             include fastcgi_params;
             include snippets/fastcgi-php.conf;
@@ -783,7 +783,7 @@
     sudo ln -s /etc/nginx/sites-available/$server_name.conf /etc/nginx/sites-enabled/$server_name.conf
     sudo ln -s /var/web /var/www/$server_name/html
 	sudo ln -s /var/stratum/config /var/web/list-algos
-    sudo systemctl reload php8.1-fpm.service
+    sudo systemctl reload php8.2-fpm.service
     sudo systemctl restart nginx.service
     echo -e "$GREEN Done...$COL_RESET"
 
@@ -866,7 +866,7 @@
 
             location ~ ^/index\.php$ {
                 fastcgi_split_path_info ^(.+\.php)(/.+)$;
-                fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;
+                fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
                 fastcgi_index index.php;
                 include fastcgi_params;
                 fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
@@ -899,7 +899,7 @@
             deny all;
     }
         location ~ /phpmyadmin/(.+\.php)$ {
-            fastcgi_pass unix:/run/php/php8.1-fpm.sock;
+            fastcgi_pass unix:/run/php/php8.2-fpm.sock;
             fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
             include fastcgi_params;
             include snippets/fastcgi-php.conf;
@@ -912,7 +912,7 @@
     echo -e "$GREEN Done...$COL_RESET"
 
     fi
-    sudo systemctl reload php8.1-fpm.service
+    sudo systemctl reload php8.2-fpm.service
     sudo systemctl restart nginx.service
     fi
 
@@ -1265,8 +1265,8 @@ echo -e "$GREEN Done...$COL_RESET"
     sudo systemctl status mysql | sed -n "1,3p"
     sudo systemctl restart nginx.service
     sudo systemctl status nginx | sed -n "1,3p"
-    sudo systemctl restart php8.1-fpm.service
-    sudo systemctl status php8.1-fpm | sed -n "1,3p"
+    sudo systemctl restart php8.2-fpm.service
+    sudo systemctl status php8.2-fpm | sed -n "1,3p"
 
 
     echo
@@ -1302,7 +1302,7 @@ echo -e "$GREEN Done...$COL_RESET"
     echo -e "$RED YOU MUST REBOOT NOW  TO FINALIZE INSTALLATION !!! $COL_RESET"
     echo -e "$RED***************************************************$COL_RESET"
     echo -e "$RED if u have white page blank on site check          $COL_RESET"
-    echo -e "$RED php8.1-memcache | php8.1-memcached | php8.1-fpm   $COL_RESET"
+    echo -e "$RED php8.2-memcache | php8.2-memcached | php8.2-fpm   $COL_RESET"
     echo -e "$RED try just restart them first...                    $COL_RESET"
     echo -e "$RED***************************************************$COL_RESET"
     echo
