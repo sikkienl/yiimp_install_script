@@ -1,11 +1,11 @@
 #!/bin/bash
 ################################################################################
 # Original Author:   Kudaraidee
-# Modified by : Delari (https://github.com/xavatar/yiimp_install_scrypt)
+# Modified by : SikkieNL (https://github.com/sikkienl/yiimp_install_scrypt)
 
 # Program:
-#   Install yiimp on Ubuntu 22.04 running Nginx, MariaDB, and php7.3
-#   v0.3 (update May, 2022)
+#   Install yiimp on Ubuntu 22.04 running Nginx, MariaDB, and php8.2
+#   v0.5 (update Mar, 2025)
 #
 ################################################################################
 
