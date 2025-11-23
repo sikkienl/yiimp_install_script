@@ -4,8 +4,8 @@
 # Modified by : SikkieNL (https://github.com/sikkienl/yiimp_install_scrypt)
 
 # Program:
-#   Install yiimp on Ubuntu 22.04 running Nginx, MySQL, and php8.2
-#   v0.5 (update Mar, 2025)
+#   Install yiimp on Ubuntu 22.04 running Nginx, MariaDB, and php8.2
+#   v0.5 (updated March 2025)
 #
 ################################################################################
 
@@ -45,7 +45,7 @@
     echo
     echo -e "$GREEN************************************************************************$COL_RESET"
     echo -e "$GREEN Yiimp Install Script v0.5 $COL_RESET"
-    echo -e "$GREEN Install yiimp on Ubuntu 22.04 running Nginx, Mysql, and php8.2 $COL_RESET"
+    echo -e "$GREEN Install yiimp on Ubuntu 22.04 running Nginx, MariaDB, and php8.2 $COL_RESET"
     echo -e "$GREEN************************************************************************$COL_RESET"
     echo
     sleep 3
@@ -139,28 +139,26 @@
     ' | sudo -E tee /etc/nginx/blockuseragents.rules >/dev/null 2>&1
 
 
-    # Installing MySQL
+    # Installing Mariadb
     echo
     echo
-    echo -e "$CYAN => Installing MySQL Server : $COL_RESET"
+    echo -e "$CYAN => Installing Mariadb Server : $COL_RESET"
     echo
     sleep 3
 
-    # Set the root password
+    # Create random root password
     rootpasswd=$(openssl rand -base64 12)
-    export DEBIAN_FRONTEND=noninteractive
-    sudo debconf-set-selections <<< "mysql-server mysql-server/root_password password $rootpasswd"
-    sudo debconf-set-selections <<< "mysql-server mysql-server/root_password_again password $rootpasswd"
+    export DEBIAN_FRONTEND="noninteractive"
 
-    # Install MySQL Server
-    sudo apt-get update
-    sudo apt-get -y install mysql-server
+    # Install Mariadb Server
+    sudo apt update
+    sudo apt -y install mariadb-server
 
-    # Start and enable MySQL service
-    sudo systemctl enable mysql.service
-    sudo systemctl start mysql.service
+    # Start and enable Mariadb service
+    sudo systemctl enable mariadb.service
+    sudo systemctl start mariadb.service
     sleep 5
-    sudo systemctl status mysql | sed -n "1,3p"
+    sudo systemctl status mariadb | sed -n "1,3p"
     sleep 15
     echo
     echo -e "$GREEN Done...$COL_RESET"
@@ -930,13 +928,13 @@
     Q2="GRANT ALL ON *.* TO 'panel'@'localhost' IDENTIFIED BY '$password';"
     Q3="FLUSH PRIVILEGES;"
     SQL="${Q1}${Q2}${Q3}"
-    sudo mysql -u root -p="$rootpasswd" -e "$SQL"
+    sudo mysql -u root -p="" -e "$SQL"
 
     # Create stratum user
     Q1="GRANT ALL ON *.* TO 'stratum'@'localhost' IDENTIFIED BY '$password2';"
     Q2="FLUSH PRIVILEGES;"
     SQL="${Q1}${Q2}"
-    sudo mysql -u root -p="$rootpasswd" -e "$SQL"
+    sudo mysql -u root -p="" -e "$SQL"
 
     #Create my.cnf
     echo '
@@ -990,7 +988,7 @@
     # Peforming the SQL import
     echo
     echo
-    echo -e "$CYAN => Database 'yiimpfrontend' and users 'panel' and 'stratum' created with password $password and $password2, will be saved for you $COL_RESET"
+    echo -e "$CYAN => Database 'yiimpfrontend' and users 'panel' and 'stratum' created with password $password and $password2, will be saved for you in ~/.my.cnf $COL_RESET"
     echo
     echo -e "Performing the SQL import"
     echo
