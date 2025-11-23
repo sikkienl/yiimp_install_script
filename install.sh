@@ -5,7 +5,7 @@
 
 # Program:
 #   Install yiimp on Ubuntu 22.04 running Nginx, MariaDB, and php8.2
-#   v0.5 (updated March 2025)
+#   v0.6 (updated March 2025)
 #
 ################################################################################
 
@@ -44,7 +44,7 @@
     clear
     echo
     echo -e "$GREEN************************************************************************$COL_RESET"
-    echo -e "$GREEN Yiimp Install Script v0.5 $COL_RESET"
+    echo -e "$GREEN Yiimp Install Script v0.6 $COL_RESET"
     echo -e "$GREEN Install yiimp on Ubuntu 22.04 running Nginx, MariaDB, and php8.2 $COL_RESET"
     echo -e "$GREEN************************************************************************$COL_RESET"
     echo
@@ -177,46 +177,64 @@
     fi
     sudo apt -y update
 
-    if [[ ("$DISTRO" == "16") ]]; then
-    sudo apt -y install php7.3-fpm php7.3-opcache php7.3 php7.3-common php7.3-gd php7.3-mysql php7.3-imap php7.3-cli \
-    php7.3-cgi php-pear php-auth imagemagick libruby php7.3-curl php7.3-intl php7.3-pspell mcrypt\
-    php7.3-recode php7.3-sqlite3 php7.3-tidy php7.3-xmlrpc php7.3-xsl memcached php-memcache php-imagick php-gettext php7.3-zip php7.3-mbstring
-    #sudo phpenmod mcrypt
-    #sudo phpenmod mbstring
-    else
-    sudo apt update && sudo apt install -y \
-    php8.2-fpm \
-    php8.2-opcache \
-    php8.2-common \
-    php8.2-gd \
-    php8.2-mysql \
-    php8.2-imap \
-    php8.2-cli \
-    php8.2-curl \
-    php8.2-intl \
-    php8.2-sqlite3 \
-    php8.2-xml \
-    php8.2-zip \
-    php8.2-mbstring \
-    php-imagick \
-    imagemagick \
-    memcached \
-    php8.2-memcached \
-    php8.2-gettext \
-    libmagickwand-dev \
-    libpsl-dev \
-    libnghttp2-dev
-
+    # Ensure lsb_release is available (used to detect Ubuntu version)
+    if ! command -v lsb_release &>/dev/null; then
+        sudo apt-get update && sudo apt-get install -y lsb-release
     fi
-    sleep 5
-    sudo systemctl start php8.2-fpm
-    sudo systemctl status php8.2-fpm | sed -n "1,3p"
-    sleep 15
-    echo
-    echo -e "$GREEN Done...$COL_RESET"
 
+    # Correctly extract Ubuntu version
+    DISTRO=$(lsb_release -rs)
+    echo "Debug: Detected OS version: $DISTRO"
 
+    # Check if the OS is Ubuntu 22.04 (LTS)
+    if [[ "$DISTRO" != "22.04" ]]; then
+        echo -e "\033[31mAborting, wrong OS. Must be Ubuntu 22.04 (detected: $DISTRO).\033[0m"
+        exit 1
+    fi
 
+    # Define a function for apt package installation (with -y flag to avoid confirmation prompts)
+    apt_install() {
+        sudo apt-get install -y "$@"
+    }
+
+    # Update package lists from repositories
+    sudo apt update && sudo apt install -y \
+
+    # Add Ondrej PHP repository (critical fix for PHP 8.2 availability)
+    if ! apt-cache policy | grep -q "ondrej/php"; then
+        echo "Adding Ondrej PHP repository..."
+        sudo apt-get install -y software-properties-common  # Required for add-apt-repository
+        sudo add-apt-repository -y ppa:ondrej/php           # Official PHP packages may not have 8.2 yet
+        sudo apt-get update                                 # Update after adding the new repository
+    fi
+
+    # Install PHP 8.2 and its extensions
+    apt_install \
+        php8.2-fpm php8.2-opcache php8.2 php8.2-common php8.2-gd php8.2-mysql php8.2-imap php8.2-cli \
+        php8.2-cgi php-pear imagemagick libruby php8.2-curl php8.2-intl php8.2-pspell \
+        php8.2-sqlite3 php8.2-tidy php8.2-xmlrpc php8.2-xsl memcached php-memcache \
+        php-imagick php8.2-zip php8.2-mbstring libpsl-dev libnghttp2-dev \
+        php8.2-memcache php8.2-memcached net-tools \
+        php8.2-xml php8.2-gettext libmagickwand-dev 
+
+    # Ensure phpenmod is available (provided by php8.2-common)
+    if ! command -v phpenmod &>/dev/null; then
+        apt_install php8.2-common
+    fi
+
+    # Enable required PHP modules (mbstring for multibyte string handling)
+    sudo phpenmod mbstring
+
+    # Set PHP 8.2 as the default PHP version
+    sudo update-alternatives --set php /usr/bin/php8.2
+
+    # Start PHP-FPM service and check its status (show only first 3 lines of status)
+    sudo systemctl start php8.2-fpm || { echo "Failed to start php8.2-fpm"; exit 1; }
+    sudo systemctl status php8.2-fpm --no-pager | sed -n "1,3p"
+
+    # Success message (green text)
+    echo -e "$GREEN Done... PHP installed successfully!$COL_RESET"
+    
     # Installing other needed files
     echo
     echo
@@ -408,15 +426,28 @@
     echo -e "Compiling Stratum"
     cd $HOME/yiimp/stratum/
     git submodule init && git submodule update
+    apt_install gcc-10 g++-10 -y
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 10
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 11
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 10
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 11
+    update-alternatives --set gcc /usr/bin/gcc-10
+    update-alternatives --set g++ /usr/bin/g++-10 
+
+    git submodule init && git submodule update
     make -C algos
     make -C sha3
     make -C iniparser
-    cd secp256k1 && chmod +x autogen.sh && ./autogen.sh && ./configure --enable-experimental --enable-module-ecdh --with-bignum=no --enable-endomorphism && make
+    cd secp256k1
+    chmod +x autogen.sh && ./autogen.sh && ./configure --enable-experimental --enable-module-ecdh --with-bignum=no --enable-endomorphism && make
     cd $HOME/yiimp/stratum/
     if [[ ("$BTC" == "y" || "$BTC" == "Y") ]]; then
     sudo sed -i 's/CFLAGS += -DNO_EXCHANGE/#CFLAGS += -DNO_EXCHANGE/' $HOME/yiimp/stratum/Makefile
     fi
     make -j$((`nproc`+1))
+
+    update-alternatives --set gcc /usr/bin/gcc-11
+    update-alternatives --set g++ /usr/bin/g++-11
 
     # Copy Files (Blocknotify,iniparser,Stratum)
     cd $HOME/yiimp
@@ -1273,7 +1304,7 @@ define("EXCH_XEGGEX_SECRET", "");
     echo
     echo
     echo -e "$GREEN***************************$COL_RESET"
-    echo -e "$GREEN Yiimp Install Script v0.5 $COL_RESET"
+    echo -e "$GREEN Yiimp Install Script v0.6 $COL_RESET"
     echo -e "$GREEN Finish !!! $COL_RESET"
     echo -e "$GREEN***************************$COL_RESET"
     echo
