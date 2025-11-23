@@ -166,8 +166,7 @@
     echo -e "$GREEN Done...$COL_RESET"
 
 
-
-    # Installing Installing php7.3
+    # Installing Installing php8.2
     echo
     echo
     echo -e "$CYAN => Installing php8.2 : $COL_RESET"
@@ -241,13 +240,13 @@
     echo
     sleep 3
 
-    sudo apt -y install software-properties-common build-essential
     sudo apt -y install libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils git cmake libboost-all-dev zlib1g-dev libz-dev libseccomp-dev libcap-dev libminiupnpc-dev gettext
-    sudo apt -y install libminiupnpc10 libzmq5
-    sudo apt -y install libcanberra-gtk-module libqrencode-dev libzmq3-dev
-    sudo apt -y install libqt5gui5 libqt5core5a libqt5webkit5-dev libqt5dbus5 qttools5-dev qttools5-dev-tools libprotobuf-dev protobuf-compiler
-    sudo add-apt-repository -y ppa:bitcoin/bitcoin
-    sudo apt -y update
+    sudo apt -y install libminiupnpc17 libzmq5
+    sudo apt -y install libcanberra-gtk-module libqrencode-dev libzmq3-dev libminizip-dev
+    sudo apt -y install libqt5gui5 libqt5core5a libqt5webkit5-dev libqt5dbus5 qttools5-dev qttools5-dev-tools libprotobuf-dev protobuf-compiler fonts-powerline
+    sudo apt -y install libssh-dev libbrotli-dev
+    sudo add-apt-repository -y ppa:luke-jr/bitcoincore
+    hide_output sudo apt -y update
     sudo apt -y install libdb4.8-dev libdb4.8++-dev libdb5.3 libdb5.3++
     echo -e "$GREEN Done...$COL_RESET"
 
@@ -399,14 +398,16 @@
     # Generating Random Password for stratum
     blckntifypass=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1`
 
-    # Compil Blocknotify
+    # Compile Blocknotify
+    echo -e "Compiling Blocknotify"
     cd ~
     git clone https://github.com/Kudaraidee/yiimp.git
     cd $HOME/yiimp/blocknotify
     sudo sed -i 's/tu8tu5/'$blckntifypass'/' blocknotify.cpp
     make -j$((`nproc`+1))
 
-    # Compil Stratum
+    # Compile Stratum
+    echo -e "Compiling Stratum"
     cd $HOME/yiimp/stratum/
     git submodule init && git submodule update
     make -C algos
@@ -440,8 +441,8 @@
     sudo rm -r /var/stratum/config/run.sh
     echo '
     #!/bin/bash
-    ulimit -n 10240
-    ulimit -u 10240
+    ulimit -n 1024000
+    ulimit -u 1024000
     cd /var/stratum
     while true; do
     ./stratum /var/stratum/config/$1
@@ -489,8 +490,8 @@
         if ($request_method !~ ^(GET|HEAD|POST)$) {
         return 444;
         }
-        listen 3005;
-        listen [::]:3005;
+        listen 80;
+        listen [::]:80;
         server_name '"${server_name}"';
         root "/var/www/'"${server_name}"'/html/web";
         index index.html index.htm index.php;
@@ -510,9 +511,9 @@
         error_log /var/log/nginx/'"${server_name}"'.app-error.log;
 
         # allow larger file uploads and longer script runtimes
-    client_body_buffer_size  50k;
+        client_body_buffer_size  50k;
         client_header_buffer_size 50k;
-        client_max_body_size 50k;
+        client_max_body_size 20m;
         large_client_header_buffers 2 50k;
         sendfile off;
 
@@ -527,7 +528,7 @@
             fastcgi_buffers 4 16k;
             fastcgi_connect_timeout 300;
             fastcgi_send_timeout 300;
-            fastcgi_read_timeout 300;
+            fastcgi_read_timeout 1300;
         try_files $uri $uri/ =404;
         }
         location ~ \.php$ {
@@ -566,7 +567,7 @@
 
     sudo ln -s /etc/nginx/sites-available/$server_name.conf /etc/nginx/sites-enabled/$server_name.conf
     sudo ln -s /var/web /var/www/$server_name/html
-	sudo ln -s /var/stratum/config /var/web/list-algos
+    sudo ln -s /var/stratum/config /var/web/list-algos
     sudo systemctl reload php8.2-fpm.service
     sudo systemctl restart nginx.service
     echo -e "$GREEN Done...$COL_RESET"
@@ -592,8 +593,8 @@
         if ($request_method !~ ^(GET|HEAD|POST)$) {
         return 444;
         }
-        listen 3005;
-        listen [::]:3005;
+        listen 80;
+        listen [::]:80;
         server_name '"${server_name}"';
         # enforce https
         return 301 https://$server_name$request_uri;
@@ -616,17 +617,17 @@
             access_log /var/log/nginx/'"${server_name}"'.app-access.log;
             error_log  /var/log/nginx/'"${server_name}"'.app-error.log;
 
-            # allow larger file uploads and longer script runtimes
-    client_body_buffer_size  50k;
+        # allow larger file uploads and longer script runtimes
+        client_body_buffer_size  50k;
         client_header_buffer_size 50k;
-        client_max_body_size 50k;
+        client_max_body_size 20m;
         large_client_header_buffers 2 50k;
         sendfile off;
 
             # strengthen ssl security
             ssl_certificate /etc/letsencrypt/live/'"${server_name}"'/fullchain.pem;
             ssl_certificate_key /etc/letsencrypt/live/'"${server_name}"'/privkey.pem;
-            ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+            ssl_protocols TLSv1.2 TLSv1.3;
             ssl_prefer_server_ciphers on;
             ssl_session_cache shared:SSL:10m;
             ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:ECDHE-RSA-AES128-GCM-SHA256:AES256+EECDH:DHE-RSA-AES128-GCM-SHA256:AES256+EDH:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DES-CBC3-SHA:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!MD5:!PSK:!RC4";
@@ -658,7 +659,7 @@
                 fastcgi_buffers 4 16k;
                 fastcgi_connect_timeout 300;
                 fastcgi_send_timeout 300;
-                fastcgi_read_timeout 300;
+                fastcgi_read_timeout 1300;
                 include /etc/nginx/fastcgi_params;
             try_files $uri $uri/ =404;
         }
@@ -705,8 +706,8 @@
         if ($request_method !~ ^(GET|HEAD|POST)$) {
         return 444;
         }
-        listen 3005;
-        listen [::]:3005;
+        listen 80;
+        listen [::]:80;
         server_name '"${server_name}"' www.'"${server_name}"';
         root "/var/www/'"${server_name}"'/html/web";
         index index.html index.htm index.php;
@@ -726,9 +727,9 @@
         error_log /var/log/nginx/'"${server_name}"'.app-error.log;
 
         # allow larger file uploads and longer script runtimes
-    client_body_buffer_size  50k;
+        client_body_buffer_size  50k;
         client_header_buffer_size 50k;
-        client_max_body_size 50k;
+        client_max_body_size 20m;
         large_client_header_buffers 2 50k;
         sendfile off;
 
@@ -743,7 +744,7 @@
             fastcgi_buffers 4 16k;
             fastcgi_connect_timeout 300;
             fastcgi_send_timeout 300;
-            fastcgi_read_timeout 300;
+            fastcgi_read_timeout 1300;
         try_files $uri $uri/ =404;
         }
         location ~ \.php$ {
@@ -782,7 +783,7 @@
 
     sudo ln -s /etc/nginx/sites-available/$server_name.conf /etc/nginx/sites-enabled/$server_name.conf
     sudo ln -s /var/web /var/www/$server_name/html
-	sudo ln -s /var/stratum/config /var/web/list-algos
+    sudo ln -s /var/stratum/config /var/web/list-algos
     sudo systemctl reload php8.2-fpm.service
     sudo systemctl restart nginx.service
     echo -e "$GREEN Done...$COL_RESET"
@@ -809,8 +810,8 @@
         if ($request_method !~ ^(GET|HEAD|POST)$) {
         return 444;
         }
-        listen 3005;
-        listen [::]:3005;
+        listen 80;
+        listen [::]:80;
         server_name '"${server_name}"';
         # enforce https
         return 301 https://$server_name$request_uri;
@@ -833,17 +834,17 @@
             access_log /var/log/nginx/'"${server_name}"'.app-access.log;
             error_log  /var/log/nginx/'"${server_name}"'.app-error.log;
 
-            # allow larger file uploads and longer script runtimes
-    client_body_buffer_size  50k;
+        # allow larger file uploads and longer script runtimes
+        client_body_buffer_size  50k;
         client_header_buffer_size 50k;
-        client_max_body_size 50k;
+        client_max_body_size 20m;
         large_client_header_buffers 2 50k;
         sendfile off;
 
             # strengthen ssl security
             ssl_certificate /etc/letsencrypt/live/'"${server_name}"'/fullchain.pem;
             ssl_certificate_key /etc/letsencrypt/live/'"${server_name}"'/privkey.pem;
-            ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+            ssl_protocols TLSv1.2 TLSv1.3;
             ssl_prefer_server_ciphers on;
             ssl_session_cache shared:SSL:10m;
             ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:ECDHE-RSA-AES128-GCM-SHA256:AES256+EECDH:DHE-RSA-AES128-GCM-SHA256:AES256+EDH:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DES-CBC3-SHA:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!MD5:!PSK:!RC4";
@@ -875,7 +876,7 @@
                 fastcgi_buffers 4 16k;
                 fastcgi_connect_timeout 300;
                 fastcgi_send_timeout 300;
-                fastcgi_read_timeout 300;
+                fastcgi_read_timeout 1300;
                 include /etc/nginx/fastcgi_params;
             try_files $uri $uri/ =404;
         }
@@ -929,18 +930,18 @@
     Q2="GRANT ALL ON *.* TO 'panel'@'localhost' IDENTIFIED BY '$password';"
     Q3="FLUSH PRIVILEGES;"
     SQL="${Q1}${Q2}${Q3}"
-    sudo mysql -u root -p"$rootpasswd" -e "$SQL"
+    sudo mysql -u root -p="$rootpasswd" -e "$SQL"
 
     # Create stratum user
     Q1="GRANT ALL ON *.* TO 'stratum'@'localhost' IDENTIFIED BY '$password2';"
     Q2="FLUSH PRIVILEGES;"
     SQL="${Q1}${Q2}"
-    sudo mysql -u root -p"$rootpasswd" -e "$SQL"
+    sudo mysql -u root -p="$rootpasswd" -e "$SQL"
 
-    # Create my.cnf
+    #Create my.cnf
     echo '
     [clienthost1]
-        user=panel
+    user=panel
     password='"${password}"'
     database=yiimpfrontend
     host=localhost
@@ -956,8 +957,7 @@
     user=root
     password='"${rootpasswd}"'
     ' | sudo -E tee ~/.my.cnf >/dev/null 2>&1
-    sudo chmod 0600 ~/.my.cnf
-
+      sudo chmod 0600 ~/.my.cnf
 
 
     # Create keys file
@@ -987,7 +987,7 @@
     echo -e "$GREEN Done...$COL_RESET"
 
 
-   # Performing the SQL import
+    # Peforming the SQL import
     echo
     echo
     echo -e "$CYAN => Database 'yiimpfrontend' and users 'panel' and 'stratum' created with password $password and $password2, will be saved for you $COL_RESET"
@@ -1042,7 +1042,7 @@
 
     # Make config file
     echo '
-<?php
+    <?php
 
 ini_set("date.timezone", "UTC");
 
@@ -1150,47 +1150,45 @@ define("EXCH_NONKYC_SECRET", "");
 define("EXCH_XEGGEX_KEY", "");
 define("EXCH_XEGGEX_SECRET", "");
 
-// Automatic withdraw to Yaamp btc wallet if btc balance > 0.3
-define("EXCH_AUTO_WITHDRAW", 0.3);
+    // Automatic withdraw to Yaamp btc wallet if btc balance > 0.3
+    define("EXCH_AUTO_WITHDRAW", 0.3);
 
-// nicehash keys deposit account & amount to deposit at a time
-define("NICEHASH_API_KEY", "521c254d-8cc7-4319-83d2-ac6c604b5b49");
-define("NICEHASH_API_ID", "9205");
-define("NICEHASH_DEPOSIT", "3J9tapPoFCtouAZH7Th8HAPsD8aoykEHzk");
-define("NICEHASH_DEPOSIT_AMOUNT", "0.01");
+    // nicehash keys deposit account & amount to deposit at a time
+    define("NICEHASH_API_KEY", "521c254d-8cc7-4319-83d2-ac6c604b5b49");
+    define("NICEHASH_API_ID", "9205");
+    define("NICEHASH_DEPOSIT", "3J9tapPoFCtouAZH7Th8HAPsD8aoykEHzk");
+    define("NICEHASH_DEPOSIT_AMOUNT", "0.01");
 
+    $cold_wallet_table = array(
+        "1C23KmLeCaQSLLyKVykHEUse1R7jRDv9j9" => 0.10,
+    );
 
-$cold_wallet_table = array(
-    "1C23KmLeCaQSLLyKVykHEUse1R7jRDv9j9" => 0.10,
-);
+    // Sample fixed pool fees
+    $configFixedPoolFees = array(
+        "zr5" => 2.0,
+        "scrypt" => 20.0,
+        "sha256" => 5.0,
+    );
 
-// Sample fixed pool fees
-$configFixedPoolFees = array(
-    "zr5" => 2.0,
-    "scrypt" => 20.0,
-    "sha256" => 5.0,
-);
-
-// Sample fixed pool fees solo
-$configFixedPoolFeesSolo = array(
+    // Sample fixed pool fees solo
+    $configFixedPoolFeesSolo = array(
     "zr5" => 2.0,
     "scrypt" => 2.0,
     "sha256" => 5.0,
-);
+    );
 
-// Sample custom stratum ports
-$configCustomPorts = array(
-//    "x11" => 7000,
-);
+    // Sample custom stratum ports
+    $configCustomPorts = array(
+    //    "x11" => 7000,
+    );
 
-// mBTC Coefs per algo (default is 1.0)
-$configAlgoNormCoef = array(
-//    "x11" => 5.0,
-);
-' | sudo -E tee /var/www/serverconfig.php >/dev/null 2>&1
+    // mBTC Coefs per algo (default is 1.0)
+    $configAlgoNormCoef = array(
+    //    "x11" => 5.0,
+    );
+    ' | sudo -E tee /var/www/serverconfig.php >/dev/null 2>&1
 
-echo -e "$GREEN Done...$COL_RESET"
-
+    echo -e "$GREEN Done...$COL_RESET"
 
 
     # Updating stratum config files with database connection info
