@@ -90,7 +90,7 @@
     read -e -p "Enter the Public IP of the system you will use to access the admin panel (IP of YOUR PC where need to be access to Panel) : " Public
     read -e -p "Install Fail2ban? [Y/n] : " install_fail2ban
     read -e -p "Install UFW and configure ports? [Y/n] : " UFW
-    read -e -p "Install LetsEncrypt SSL? IMPORTANT! You MUST have your domain name pointed to this server prior to running the script!! [Y/n]: " ssl_install
+    read -e -p "Install Let's Encrypt SSL? IMPORTANT! You MUST have your domain name pointed to this server prior to running the script!! [Y/n]: " ssl_install
 
 
     # Installing Nginx
@@ -232,9 +232,9 @@
     sleep 3
 
     sudo apt -y install software-properties-common build-essential
-    sudo apt -y install libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils git cmake libboost-all-dev zlib1g-dev libz-dev libseccomp-dev libcap-dev libminiupnpc-dev gettext
-    sudo apt -y install libminiupnpc10 libzmq5
-    sudo apt -y install libcanberra-gtk-module libqrencode-dev libzmq3-dev
+    sudo apt -y install libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils git cmake libboost-all-dev zlib1g-dev libseccomp-dev libcap-dev gettext
+    sudo apt -y install libminiupnpc-dev libminiupnpc17
+    sudo apt -y install libcanberra-gtk-module libqrencode-dev libzmq3-dev libzmq5
     sudo apt -y install libqt5gui5 libqt5core5a libqt5webkit5-dev libqt5dbus5 qttools5-dev qttools5-dev-tools libprotobuf-dev protobuf-compiler
     sudo add-apt-repository -y ppa:bitcoin/bitcoin
     sudo apt -y update
@@ -512,11 +512,11 @@
 
     # Install SSL (with SubDomain)
     echo
-    echo -e "Install LetsEncrypt and setting SSL (with SubDomain)"
+    echo -e "Install Let's Encrypt and setting SSL (with SubDomain)"
     echo
 
-    sudo apt -y install letsencrypt
-    sudo letsencrypt certonly -a webroot --webroot-path=/var/web --email "$EMAIL" --agree-tos -d "$server_name"
+    sudo apt -y install certbot python3-certbot-nginx
+    sudo certbot certonly --webroot --webroot-path=/var/web --email "$EMAIL" --agree-tos -d "$server_name"
     sudo rm /etc/nginx/sites-available/$server_name.conf
     sudo openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
     # I am SSL Man!
@@ -728,12 +728,12 @@
 
     # Install SSL (without SubDomain)
     echo
-    echo -e "Install LetsEncrypt and setting SSL (without SubDomain)"
+    echo -e "Install Let's Encrypt and setting SSL (without SubDomain)"
     echo
     sleep 3
 
-    sudo apt -y install letsencrypt
-    sudo letsencrypt certonly -a webroot --webroot-path=/var/web --email "$EMAIL" --agree-tos -d "$server_name" -d www."$server_name"
+    sudo apt -y install certbot python3-certbot-nginx
+    sudo certbot certonly --webroot --webroot-path=/var/web --email "$EMAIL" --agree-tos -d "$server_name" -d "www.$server_name"
     sudo rm /etc/nginx/sites-available/$server_name.conf
     sudo openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
     # I am SSL Man!
