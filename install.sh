@@ -2,10 +2,11 @@
 ################################################################################
 # Original Author:   Kudaraidee
 # Modified by : Delari (https://github.com/xavatar/yiimp_install_scrypt)
+# Modified by : SikkieNL (https://github.com/sikkienl/yiimp_install_scrypt)
 
 # Program:
 #   Install yiimp on Ubuntu 22.04 running Nginx, MariaDB, and php7.3
-#   v0.3 (update May, 2022)
+#   Update January, 2026
 #
 ################################################################################
 
@@ -13,7 +14,7 @@
     output() {
     printf "\E[0;33;40m"
     echo $1
-    printf "\E[0m"ku
+    printf "\E[0m"
     }
 
     displayErr() {
@@ -401,7 +402,7 @@
 
     # Compil Blocknotify
     cd ~
-    git clone https://github.com/Kudaraidee/yiimp.git
+    git clone https://github.com/sikkienl/yiimp.git
     cd $HOME/yiimp/blocknotify
     sudo sed -i 's/tu8tu5/'$blckntifypass'/' blocknotify.cpp
     make -j$((`nproc`+1))
@@ -617,11 +618,11 @@
             error_log  /var/log/nginx/'"${server_name}"'.app-error.log;
 
             # allow larger file uploads and longer script runtimes
-    client_body_buffer_size  50k;
-        client_header_buffer_size 50k;
-        client_max_body_size 50k;
-        large_client_header_buffers 2 50k;
-        sendfile off;
+            client_body_buffer_size  50k;
+            client_header_buffer_size 50k;
+            client_max_body_size 50k;
+            large_client_header_buffers 2 50k;
+            sendfile off;
 
             # strengthen ssl security
             ssl_certificate /etc/letsencrypt/live/'"${server_name}"'/fullchain.pem;
@@ -726,7 +727,7 @@
         error_log /var/log/nginx/'"${server_name}"'.app-error.log;
 
         # allow larger file uploads and longer script runtimes
-    client_body_buffer_size  50k;
+        client_body_buffer_size  50k;
         client_header_buffer_size 50k;
         client_max_body_size 50k;
         large_client_header_buffers 2 50k;
@@ -834,11 +835,11 @@
             error_log  /var/log/nginx/'"${server_name}"'.app-error.log;
 
             # allow larger file uploads and longer script runtimes
-    client_body_buffer_size  50k;
-        client_header_buffer_size 50k;
-        client_max_body_size 50k;
-        large_client_header_buffers 2 50k;
-        sendfile off;
+            client_body_buffer_size  50k;
+            client_header_buffer_size 50k;
+            client_max_body_size 50k;
+            large_client_header_buffers 2 50k;
+            sendfile off;
 
             # strengthen ssl security
             ssl_certificate /etc/letsencrypt/live/'"${server_name}"'/fullchain.pem;
@@ -940,7 +941,7 @@
     # Create my.cnf
     echo '
     [clienthost1]
-        user=panel
+    user=panel
     password='"${password}"'
     database=yiimpfrontend
     host=localhost
@@ -1277,7 +1278,7 @@ echo -e "$GREEN Done...$COL_RESET"
     echo
     echo
     echo -e "$GREEN***************************$COL_RESET"
-    echo -e "$GREEN Yiimp Install Script v0.5 $COL_RESET"
+    echo -e "$GREEN Yiimp Install Script $COL_RESET"
     echo -e "$GREEN Finish !!! $COL_RESET"
     echo -e "$GREEN***************************$COL_RESET"
     echo
