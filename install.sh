@@ -5,7 +5,7 @@
 # Modified by : SikkieNL (https://github.com/sikkienl/yiimp_install_scrypt)
 
 # Program:
-#   Install yiimp on Ubuntu 22.04 running Nginx, MariaDB, and php7.3
+#   Install yiimp on Ubuntu 22.04 running Nginx, MariaDB, and PHP 8.2
 #   Update January, 2026
 #
 ################################################################################
@@ -39,14 +39,17 @@
     sudo chmod +x /usr/bin/editconf.py
     sudo chmod +x /etc/screen-scrypt.sh
 
+    # Functions Source
     source /etc/functions.sh
-
+    sleep 3
+    # Check prerequisite
+    source conf/prerequisite.sh
 
     clear
     echo
     echo -e "$GREEN************************************************************************$COL_RESET"
     echo -e "$GREEN Yiimp Install Script $COL_RESET"
-    echo -e "$GREEN Install yiimp on Ubuntu 22.04 running Nginx, Mysql, and php8.2 $COL_RESET"
+    echo -e "$GREEN Install yiimp on Ubuntu 22.04 running Nginx, Mysql, and PHP 8.2 $COL_RESET"
     echo -e "$GREEN************************************************************************$COL_RESET"
     echo
     sleep 3
@@ -67,15 +70,15 @@
     echo -e "$GREEN Done...$COL_RESET"
 
 
-    source conf/prerequisite.sh
-    sleep 3
+    # Get IP Address and other config values
     source conf/getip.sh
 
 
     echo 'PUBLIC_IP='"${PUBLIC_IP}"'
     PUBLIC_IPV6='"${PUBLIC_IPV6}"'
-    DISTRO='"${DISTRO}"'
+    DISTRO='"${UBUNTU_VERSION}"'
     PRIVATE_IP='"${PRIVATE_IP}"'' | sudo -E tee conf/pool.conf >/dev/null 2>&1
+    sleep 3
 
     echo
     echo
@@ -158,10 +161,10 @@
     echo -e "$GREEN Done...$COL_RESET"
 
 
-    # Installing php7.3
+    # Installing PHP 8.2
     echo
     echo
-    echo -e "$CYAN => Installing php8.2 : $COL_RESET"
+    echo -e "$CYAN => Installing PHP 8.2 : $COL_RESET"
     echo
     sleep 3
 
@@ -171,13 +174,6 @@
     fi
     sudo apt -y update
 
-    if [[ ("$DISTRO" == "16") ]]; then
-    sudo apt -y install php7.3-fpm php7.3-opcache php7.3 php7.3-common php7.3-gd php7.3-mysql php7.3-imap php7.3-cli \
-    php7.3-cgi php-pear php-auth imagemagick libruby php7.3-curl php7.3-intl php7.3-pspell mcrypt\
-    php7.3-recode php7.3-sqlite3 php7.3-tidy php7.3-xmlrpc php7.3-xsl memcached php-memcache php-imagick php-gettext php7.3-zip php7.3-mbstring
-    #sudo phpenmod mcrypt
-    #sudo phpenmod mbstring
-    else
     sudo apt update && sudo apt install -y \
     php8.2-fpm \
     php8.2-opcache \
@@ -201,7 +197,6 @@
     libpsl-dev \
     libnghttp2-dev
 
-    fi
     sleep 5
     sudo systemctl start php8.2-fpm
     sudo systemctl status php8.2-fpm | sed -n "1,3p"
