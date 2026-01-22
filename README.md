@@ -1,64 +1,154 @@
-# Yiimp_install_scrypt v0.3 (update May, 2022)
+# Yiimp Install Script
 
-Official Yiimp (used in this script for Yiimp Installation): https://github.com/tpruvot/yiimp
-
----
-
-## Install script for yiimp on Ubuntu Server 16.04 / 18.04 (use Tpruvot's Yiimp)
-
-USE THIS SCRIPT ON FRESH INSTALL UBUNTU Server 16.04 / 18.04 !
-
-Connect on your VPS =>
-
-- apt update
-- apt upgrade
-- reboot
-- adduser pool (pool it's just an example...)
-- adduser pool sudo
-- su - pool
-- exit
-- su - pool
-- sudo apt -y install git
-- git clone https://github.com/Kudaraidee/yiimp_install_script.git
-- cd yiimp_install_scrypt/
-- bash install.sh (DO NOT RUN THE SCRIPT AS ROOT or SUDO)
-- At the end, you MUST REBOOT to finalize installation...
-
-Finish !
-
-- Go http://xxx.xxx.xxx.xxx or https://xxx.xxx.xxx.xxx (if you have chosen LetsEncrypt SSL). Enjoy !
-- Go http://xxx.xxx.xxx.xxx/site/myadmin or https://xxx.xxx.xxx.xxx/site/myadmin to access Panel Admin
-
-If you are issue after installation (nginx,mariadb... not found), use this script : bash install-debug.sh (watch the log during installation)
-
-###### :bangbang: **YOU MUST UPDATE THE FOLLOWING FILES :**
-
-- **/var/web/serverconfig.php :** update this file to include your public ip (line = YAAMP_ADMIN_IP) to access the admin panel (Put your PERSONNAL IP, NOT IP of your VPS). update with public keys from exchanges. update with other information specific to your server..
-- **/etc/yiimp/keys.php :** update with secrect keys from the exchanges (not mandatory)
-- **If you want change 'AdminPanel' to access Panel Admin :** Edit this file "/var/web/yaamp/modules/site/SiteController.php" and Line 11 => change 'AdminPanel'
-
-###### :bangbang: **IMPORTANT** :
-
-- The configuration of yiimp and coin require a minimum of knowledge in linux & many beers...
-- Your mysql information (login/Password) is saved in **~/.my.cnf**
+Official Yiimp repository (used by this install script):
+[https://github.com/tpruvot/yiimp](https://github.com/tpruvot/yiimp)
 
 ---
 
-###### This script has an interactive beginning and will ask for the following information :
+## Yiimp Installation Script for Ubuntu Server
 
-- Server Name (no http:// or www !!!!! Example : crypto.com OR pool.crypto.com OR 80.41.52.63)
-- Are you using a subdomain (mypoolx11.crypto.com)
-- Enter support email
-- Set stratum to AutoExchange
-- Your Public IP for admin access (Put your PERSONNAL IP, NOT IP of your VPS)
-- Install Fail2ban
-- Install UFW and configure ports
-- Install LetsEncrypt SSL
+⚠️ USE THIS SCRIPT ONLY WITH A NEW CLEAN INSTALLATION OF UBUNTU SERVER 22.04 ⚠️
 
 ---
 
-**This install script will get you 95% ready to go with yiimp. There are a few things you need to do after the main install is finished.**
+## Installation Steps
 
-While I did add some server security to the script, it is every server owners responsibility to fully secure their own servers. After the installation you will still need to customize your serverconfig.php file to your liking, add your API keys, and build/add your coins to the control panel.
+Connect to your VPS and run the following commands:
 
-There will be several wallets already in yiimp. These have nothing to do with the installation script and are from the database import from the yiimp github.
+```bash
+apt update
+apt upgrade
+reboot
+```
+
+After reboot:
+
+```bash
+adduser pool # "pool" is just an example username
+adduser pool sudo
+su - pool
+sudo apt -y install git
+git clone https://github.com/sikkienl/yiimp_install_script.git
+cd yiimp_install_script
+bash install.sh
+```
+
+❗ **DO NOT run the script as `root` or with `sudo`.**
+
+At the end of the installation, you **MUST reboot** to finalize setup.
+
+---
+
+## Accessing Yiimp
+
+* Website:
+  `http://xxx.xxx.xxx.xxx` or `https://xxx.xxx.xxx.xxx` (if Let's Encrypt SSL was enabled)
+
+* Website:
+  `http://xxx.xxx.xxx.xxx/site/myadmin` or `https://xxx.xxx.xxx.xxx/site/myadmin`
+
+Enjoy your Yiimp pool!
+
+---
+
+## Troubleshooting
+
+If you encounter issues after installation (for example: nginx or mariadb not found), run:
+
+```bash
+bash install-debug.sh
+```
+
+⚠️ Watch the log output carefully during installation.
+
+---
+
+## Required Configuration (IMPORTANT)
+
+###### :bangbang: **YOU MUST UPDATE THE FOLLOWING FILES**
+
+### 1. `/var/web/serverconfig.php`
+
+* Set your **public personal IP** (not your VPS IP)
+
+  ```php
+  define('YAAMP_ADMIN_IP', 'YOUR_PERSONAL_IP');
+  ```
+* Update exchange public keys
+* Customize server-specific settings
+
+### 2. `/etc/yiimp/keys.php`
+
+* Add/update secret API keys from exchanges (optional)
+
+### 3. Change Admin Panel URL (Optional)
+
+If you want to rename `AdminPanel`:
+
+Edit:
+
+```
+/var/web/yaamp/modules/site/SiteController.php
+```
+
+Change **line 11** from:
+
+```php
+AdminPanel
+```
+
+to your preferred name.
+
+---
+
+## Important Notes
+
+* Configuring Yiimp and coins requires basic Linux knowledge (and many beers 🍺).
+* Your MySQL credentials (username/password) are stored in:
+
+  ```
+  ~/.my.cnf
+  ```
+
+---
+
+## Interactive Installer Questions
+
+During installation, the script will ask for:
+
+* Server name
+  *(No `http://` or `www`)*
+  Examples:
+
+  * `crypto.com`
+  * `pool.crypto.com`
+  * `80.41.52.63`
+
+* Are you using a subdomain (e.g. `mypoolx11.crypto.com`)
+
+* Support email address
+
+* Enable stratum AutoExchange
+
+* Public IP for admin access (**your personal IP, not VPS IP**)
+
+* Install Fail2Ban
+
+* Install UFW and configure firewall ports
+
+* Install Let's Encrypt SSL
+
+---
+
+## Post-Installation Notes
+
+This install script will get you **about 95% ready** to run Yiimp.
+
+While some basic security is included, **it is the server owner’s responsibility** to properly secure the server. After installation you should:
+
+* Review and customize `serverconfig.php`
+* Add your exchange API keys
+* Add and configure coins via the Yiimp control panel
+
+Several wallets are already present by default. These come from the Yiimp database import and are **not related to this install script**.
+
